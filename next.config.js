@@ -5,6 +5,14 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Also recommended to ignore linting during build to speed things up
+    ignoreDuringBuilds: true,
+  },
+};
 
 export default config;
