@@ -14,7 +14,7 @@ export function ChatSidebar({
   currentSessionId,
 }: {
   sessions: ChatSession[];
-  currentSessionId?: string;
+  currentSessionId?: number | string;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const utils = api.useUtils();
@@ -91,7 +91,7 @@ export function ChatSidebar({
                   >
                     <Link href={`/chat/${session.id}`}>
                       <MessageCircle className="h-4 w-4" />
-                      <span className="truncate">{session.title}</span>
+                      <span className="truncate">{session.name}</span>
                     </Link>
                   </Button>
                 ))}

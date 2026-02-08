@@ -18,7 +18,7 @@ export function ChatHeader({ chatId, initialName }: ChatHeaderProps) {
   const router = useRouter();
   const utils = api.useUtils();
 
-  const deleteChat = api.chat.delete.useMutation({
+  const deleteChat = api.chat.deleteChat.useMutation({
     onSuccess: () => {
       void utils.chat.getAll.invalidate();
       router.push('/');

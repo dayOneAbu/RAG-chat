@@ -6,7 +6,7 @@ import { ChatInterface } from "~/app/_components/chat/chat-interface";
 import { Sidebar } from "~/app/_components/layout/sidebar";
 import { cn } from "~/lib/utils";
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session } = useSession();
   const { id } = use(params);
   const chatId = parseInt(id);
