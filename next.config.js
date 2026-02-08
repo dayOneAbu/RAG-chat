@@ -6,11 +6,11 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Production-ready configuration
+  // TypeScript build errors are now fixed
   eslint: {
-    // Also recommended to ignore linting during build to speed things up
+    // TODO: Fix ESLint errors before final production deployment
+    // Currently there are pre-existing unsafe any type errors that need attention
     ignoreDuringBuilds: true,
   },
 };

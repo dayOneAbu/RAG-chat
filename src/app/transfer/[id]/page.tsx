@@ -1,6 +1,6 @@
 "use client";
 import { use } from "react";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
 import { Button } from "~/app/_components/ui/button";
@@ -32,30 +32,32 @@ export default function TransferPage({ params }: { params: Promise<{ id: string 
   const [isConnected, setIsConnected] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
+  const [stagesCompleted, setStagesCompleted] = useState<boolean[]>([false, false, false, false]);
+
   const transferStages = [
     {
       title: "Connecting to Customer Service",
       description: "Searching for available agents...",
       icon: <Phone className="h-6 w-6 text-primary" />,
-      completed: false
+      completed: stagesCompleted[0]
     },
     {
       title: "Retrieving Your Conversation",
       description: "Loading your chat history...",
       icon: <MessageCircle className="h-6 w-6 text-primary" />,
-      completed: false
+      completed: stagesCompleted[1]
     },
     {
       title: "Assigning Specialist",
       description: "Finding the right agent for your query...",
       icon: <Users className="h-6 w-6 text-primary" />,
-      completed: false
+      completed: stagesCompleted[2]
     },
     {
       title: "Finalizing Connection",
       description: "Preparing for secure transfer...",
       icon: <BadgeCheck className="h-6 w-6 text-primary" />,
-      completed: false
+      completed: stagesCompleted[3]
     }
   ];
 
@@ -70,24 +72,40 @@ export default function TransferPage({ params }: { params: Promise<{ id: string 
 
     const stageTimers = [
       setTimeout(() => {
-        transferStages[0].completed = true;
+        setStagesCompleted(prev => {
+          const updated = [...prev];
+          updated[0] = true;
+          return updated;
+        });
         setCurrentStage(1);
       }, 2000),
 
       setTimeout(() => {
-        transferStages[1].completed = true;
+        setStagesCompleted(prev => {
+          const updated = [...prev];
+          updated[1] = true;
+          return updated;
+        });
         setCurrentStage(2);
       }, 5000),
 
       setTimeout(() => {
         const randomAgent = agentNames[Math.floor(Math.random() * agentNames.length)];
-        setAgentName(randomAgent);
-        transferStages[2].completed = true;
+        setAgentName(randomAgent ?? "");
+        setStagesCompleted(prev => {
+          const updated = [...prev];
+          updated[2] = true;
+          return updated;
+        });
         setCurrentStage(3);
       }, 8000),
 
       setTimeout(() => {
-        transferStages[3].completed = true;
+        setStagesCompleted(prev => {
+          const updated = [...prev];
+          updated[3] = true;
+          return updated;
+        });
         setIsConnected(true);
         setTimeout(() => {
           setShowConfirmation(true);
@@ -203,10 +221,10 @@ export default function TransferPage({ params }: { params: Promise<{ id: string 
 
             <div className="rounded-lg border p-4 text-left">
               <div className="flex items-start gap-3">
-                {transferStages[currentStage].icon}
+                {transferStages[currentStage]?.icon}
                 <div>
-                  <h3 className="font-semibold">{transferStages[currentStage].title}</h3>
-                  <p className="text-muted-foreground text-sm">{transferStages[currentStage].description}</p>
+                  <h3 className="font-semibold">{transferStages[currentStage]?.title}</h3>
+                  <p className="text-muted-foreground text-sm">{transferStages[currentStage]?.description}</p>
                 </div>
               </div>
             </div>
