@@ -60,7 +60,7 @@ export const authRouter = createTRPCRouter({
   signIn: publicProcedure
     .input(signInSchema)
     .mutation(async ({ ctx, input }) => {
-      const { email, password } = input;
+      const { email } = input;
 
       const user = await ctx.db.user.findFirst({
         where: { email },
@@ -75,20 +75,20 @@ export const authRouter = createTRPCRouter({
 
       return { success: true };
     }),
-    resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ ctx, input }) => {
-  const { token, password } = input;
-  const record = await ctx.db.passwordResetToken.findUnique({ where: { token } });
-  if (!record || record.expiresAt < new Date()) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired token" });
-  }
-  const hashedPassword = await hash(password, 12);
-  await ctx.db.user.update({
-    where: { id: record.userId },
-    data: { password: hashedPassword },
-  });
-  await ctx.db.passwordResetToken.delete({ where: { token } });
-  return { success: true };
-}),
+  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ ctx, input }) => {
+    const { token, password } = input;
+    const record = await ctx.db.passwordResetToken.findUnique({ where: { token } });
+    if (!record || record.expiresAt < new Date()) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid or expired token" });
+    }
+    const hashedPassword = await hash(password, 12);
+    await ctx.db.user.update({
+      where: { id: record.userId },
+      data: { password: hashedPassword },
+    });
+    await ctx.db.passwordResetToken.delete({ where: { token } });
+    return { success: true };
+  }),
   requestPasswordReset: publicProcedure.input(requestResetSchema).mutation(async ({ ctx, input }) => {
     const { email } = input;
     // 1. Find user

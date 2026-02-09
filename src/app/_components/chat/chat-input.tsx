@@ -3,7 +3,7 @@
 
 import type { FormEvent } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Mic, Send, Square, Headphones, Loader2 ,SquareIcon} from "lucide-react";
+import { Mic, Send, Square, Headphones, Loader2 } from "lucide-react";
 import { Button } from "~/app/_components/ui/button";
 import { Input } from "~/app/_components/ui/input";
 import VoiceSelect from "./voice-select";
@@ -24,7 +24,6 @@ interface ChatInputProps {
   setSelectedVoice: (voice: "am-ET-AmehaNeural" | "am-ET-MekdesNeural") => void;
   //setSelectedVoice: (voice: string) => void;
   // Keep existing props
-  onAgentClick: () => void;
   appendNotification: (message: string, isError?: boolean) => void;
   isStreaming?: boolean;
   onStopStreaming?: () => void;
@@ -41,16 +40,13 @@ export default function ChatInput({
   selectedVoice,
   setSelectedVoice,
   // Keep existing props
-  onAgentClick,
   appendNotification,
   isStreaming = false,
   onStopStreaming,
 }: ChatInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
-    const [isAudioPlaying, setIsAudioPlaying] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const { speak, isPlaying } = useTTS(); // For input preview TTS
+  const { isPlaying } = useTTS(); // For input preview TTS
   const router = useRouter();
 
   // --- STT Hook ---
@@ -126,8 +122,10 @@ export default function ChatInput({
                 // --- Prioritize stopping streaming ---
                 if (isStreaming && onStopStreaming) {
                   onStopStreaming();
+                } else if (isRecording) {
+                  stopSTT();
                 } else {
-                  isRecording ? stopSTT() : startSTT();
+                  startSTT();
                 }
               }}
               title={isStreaming ? "Stop streaming response" : (isRecording ? "Stop recording" : "Start voice input")}

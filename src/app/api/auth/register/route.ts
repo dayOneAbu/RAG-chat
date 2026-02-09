@@ -32,9 +32,8 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 12);
     const verificationToken = Math.random().toString(36).substring(2, 15);
-    const verificationLink = `${
-      process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-    }/api/auth/verify?token=${verificationToken}&email=${email}`;
+    const verificationLink = `${process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
+      }/api/auth/verify?token=${verificationToken}&email=${email}`;
 
     await db.user.create({
       data: {

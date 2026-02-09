@@ -3,9 +3,10 @@ import { type NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, voice = "am-ET-AmehaNeural" } = await req.json();
+    const body = (await req.json()) as { text?: string; voice?: string };
+    const { text, voice = "am-ET-AmehaNeural" } = body;
 
-    if (!text?.trim()) {
+    if (!text || typeof text !== 'string' || !text.trim()) {
       return new Response(JSON.stringify({ error: "Missing text" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },

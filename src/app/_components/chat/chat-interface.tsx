@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { api } from "~/trpc/react";
 import ChatInput from "./chat-input";
 import { ChatMessages } from "./chat-messages";
@@ -46,10 +46,11 @@ function TransferModal({ open, onClose, onTransfer }: { open: boolean; onClose: 
   );
 }
 
-function ErrorFallback({ error }: { error: Error }) {
+function ErrorFallback({ error }: FallbackProps) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
   return (
     <div className="p-4 bg-red-100 text-red-700 rounded-lg m-4">
-      ስህተት ተከስቷል: {error.message}
+      ስህተት ተከስቷል: {errorMessage}
     </div>
   );
 }
@@ -64,7 +65,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
   const [isPlayingAudio, setIsPlayingAudio] = useState<string | null>(null);
   const [isPausedAudio, setIsPausedAudio] = useState<string | null>(null);
   const [isAutoPlaying, setIsAutoPlaying] = useState<boolean>(false);
-  const [inputMode, setInputMode] = useState<"text" | "voice">("text");
+  const [inputMode] = useState<"text" | "voice">("text");
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const currentAudio = useRef<HTMLAudioElement | null>(null);
   const currentMessageId = useRef<string | null>(null);
@@ -91,68 +92,35 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
   }
 
   interface TRPCClientError extends Error {
-    data?: { code?: string; httpStatus?: number; path?: string; stack?: string; zodError?: any };
+    data?: { code?: string; httpStatus?: number; path?: string; stack?: string; zodError?: unknown };
     shape?: { message: string; code: number };
   }
 
-  const createChatMutation = api.chat.create.useMutation<CreateChatResponse>({
-    onError: (error) => {
-      console.error('Create chat error:', error);
-      appendNotification(`Failed to create chat: ${error.message}`, true);
-    },
-  });
+  const appendNotification = useCallback((text: string, isError = false) => {
+    const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+    setNotifications(prev => [...prev, { id, text, isError, timestamp: new Date() }]);
+    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), isError ? 10000 : 3000);
+  }, []);
 
-  const addMessageMutation = api.chat.addMessage.useMutation<AddMessageResponse>({
-    onError: (error) => {
-      console.error('Add message error:', error);
-      appendNotification(`Failed to send message: ${error.message}`, true);
-    },
-  });
+  const createChatMutation = api.chat.create.useMutation<CreateChatResponse>();
+  const addMessageMutation = api.chat.addMessage.useMutation<AddMessageResponse>();
 
-  const createMessageFromAddResponse = (response: AddMessageResponse, content: string, chatId: number, id: string): Message => ({
-    id,
-    chatId,
-    content,
-    role: 'assistant',
-    audioUrl: response.audioUrl || null,
-    createdAt: new Date(),
-  });
 
-  const createMessageFromCreateResponse = (response: CreateChatResponse, userContent: string, aiContent: string): { userMessage: Message; aiMessage: Message; newChatId: number } => {
-    const newChatId = response.id;
-    const timestamp = Date.now();
-    const userMessage: Message = {
-      id: `user-${newChatId}-${timestamp}`,
-      chatId: newChatId,
-      content: userContent,
-      role: 'user',
-      audioUrl: null,
-      createdAt: new Date(),
-    };
-    const aiMessage: Message = {
-      id: `ai-${newChatId}-${timestamp}`,
-      chatId: newChatId,
-      content: aiContent,
-      role: 'assistant',
-      audioUrl: response.audioUrl || null,
-      createdAt: new Date(),
-    };
-    return { userMessage, aiMessage, newChatId };
-  };
+
 
   useEffect(() => {
     if (createChatMutation.error) {
       const err = createChatMutation.error as TRPCClientError;
-      appendNotification(err.shape?.message || err.message || 'Failed to create chat.', true);
+      appendNotification(err.shape?.message ?? err.message ?? 'Failed to create chat.', true);
     }
-  }, [createChatMutation.error]);
+  }, [createChatMutation.error, appendNotification]);
 
   useEffect(() => {
     if (addMessageMutation.error) {
       const err = addMessageMutation.error as TRPCClientError;
-      appendNotification(err.shape?.message || err.message || 'Failed to send message.', true);
+      appendNotification(err.shape?.message ?? err.message ?? 'Failed to send message.', true);
     }
-  }, [addMessageMutation.error]);
+  }, [addMessageMutation.error, appendNotification]);
 
   const { data: currentChat, error: chatError } = api.chat.getById.useQuery(
     { id: chatId! },
@@ -164,7 +132,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
       console.error('Failed to load chat:', chatError);
       appendNotification('Failed to load chat.', true);
     }
-  }, [chatError]);
+  }, [chatError, appendNotification]);
 
   useEffect(() => {
     if (currentChat?.messages) {
@@ -224,11 +192,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
     return () => chatContainer.removeEventListener('scroll', handleScroll);
   }, [messages]);
 
-  const appendNotification = useCallback((text: string, isError = false) => {
-    const id = `notif-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-    setNotifications(prev => [...prev, { id, text, isError, timestamp: new Date() }]);
-    setTimeout(() => setNotifications(prev => prev.filter(n => n.id !== id)), isError ? 10000 : 3000);
-  }, []);
+
 
   const stopAudio = useCallback(() => {
     if (currentAudio.current) {
@@ -263,15 +227,15 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
   const handlePlayAudio = useCallback((
     messageId: string | number,
     audioUrlOrContent: string | undefined | null,
-    voice: string = "am-ET-MekdesNeural",
-    isAutoPlay: boolean = false
+    voice = "am-ET-MekdesNeural",
+    isAutoPlay = false
   ) => {
     const messageIdStr = String(messageId);
     console.log(`[handlePlayAudio] Called with messageId: ${messageIdStr}, isAutoPlay: ${isAutoPlay}, messages:`, messages.map(m => ({ id: m.id, role: m.role })));
     
     let contentToSpeak = "";
     if (isAutoPlay && typeof audioUrlOrContent === 'string' && audioUrlOrContent.startsWith("TTS_ON_DEMAND:")) {
-      contentToSpeak = audioUrlOrContent.split("TTS_ON_DEMAND:")[1] || "";
+      contentToSpeak = audioUrlOrContent.split("TTS_ON_DEMAND:")[1] ?? "";
     } else {
       const message = messages.find(m => String(m.id) === messageIdStr);
       if (!message) {
@@ -344,7 +308,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
             console.log(`[handlePlayAudio] Audio ended for message ${messageIdStr}`);
           };
           audio.onerror = (e) => {
-            const errorMessage = e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unknown audio error';
+            const errorMessage = e instanceof Error ? e.message : (typeof e === 'object' && e !== null && 'message' in e) ? String(e.message) : typeof e === 'string' ? e : 'Unknown audio error';
             stopAudio();
             appendNotification(`Failed to play audio: ${errorMessage}`, true);
             console.error(`[handlePlayAudio] Audio error for message ${messageIdStr}:`, e);
@@ -366,7 +330,8 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
       };
       playTTS().catch(error => {
         console.error(`[handlePlayAudio] Error starting TTS:`, error);
-        appendNotification(`Failed to start audio: ${error.message}`, true);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        appendNotification(`Failed to start audio: ${errorMessage}`, true);
         stopAudio();
       });
     } else if (typeof actualAudioUrlOrContent === 'string' && actualAudioUrlOrContent.trim() !== "") {
@@ -390,20 +355,23 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
       });
       setIsPausedAudio(null);
       setIsAutoPlaying(isAutoPlay);
-      new Promise(resolve => setTimeout(resolve, 500)).then(() => {
+      new Promise<void>(resolve => setTimeout(resolve, 500)).then(() => {
         audio.play().then(() => {
           console.log(`[handlePlayAudio] Started audio for message ${messageIdStr}`);
         }).catch(error => {
+          const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(`[handlePlayAudio] Error starting audio:`, error);
-          appendNotification(`Failed to play audio: ${error.message}`, true);
+          appendNotification(`Failed to play audio: ${errorMessage}`, true);
           stopAudio();
         });
+      }).catch(err => {
+        console.error('Promise error:', err);
       });
     } else {
       appendNotification("No valid audio source available.", true);
       stopAudio();
     }
-  }, [messages, stopAudio, appendNotification]);
+  }, [messages, stopAudio, appendNotification, isPausedAudio, isPlayingAudio]);
 
   const handleStopAudio = useCallback((messageId: string | number) => {
     const messageIdStr = String(messageId);
@@ -428,7 +396,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
         content: text,
         role: 'user',
         createdAt: new Date(),
-        chatId: chatId || -1,
+        chatId: chatId ?? -1,
         audioUrl: null,
       };
       setMessages(prev => {
@@ -472,7 +440,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
         const createResponse = await createChatMutation.mutateAsync(createData);
         if (!createResponse?.id) throw new Error('Failed to create chat.');
         newChatId = createResponse.id;
-        await router.push(`/chat/${newChatId}`);
+        void router.push(`/chat/${newChatId}`);
         const userMessage: Message = {
           id: `user-${newChatId}-${timestamp}`,
           chatId: newChatId,
@@ -495,7 +463,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
       }
 
       await Promise.all([
-        utils.chat.getById.invalidate({ id: newChatId || chatId }),
+        utils.chat.getById.invalidate({ id: newChatId ?? chatId }),
         utils.chat.getAll.invalidate(),
       ]);
 
@@ -517,7 +485,7 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
         if (cleanContent && cleanContent.replace(/\s/g, '').length > 0) {
           console.log(`[handleSubmit] Triggering auto-play for message ${finalAiMessage.id}:`, cleanContent.substring(0, 100) + '...');
           setTimeout(() => {
-            handlePlayAudio(finalAiMessage!.id, `TTS_ON_DEMAND:${cleanContent}`, selectedVoice, true);
+            handlePlayAudio(finalAiMessage.id, `TTS_ON_DEMAND:${cleanContent}`, selectedVoice, true);
           }, 200);
         } else {
           console.warn(`[handleSubmit] No valid content to play for message ${finalAiMessage.id}`);
@@ -615,10 +583,9 @@ export function ChatInterface({ chatId }: { chatId?: number }) {
               userMessageCount={messages.filter(m => m.role === "user").length}
               selectedVoice={selectedVoice}
               setSelectedVoice={setSelectedVoice}
-              onAgentClick={() => setShowModal(true)}
               appendNotification={appendNotification}
               isStreaming={false}
-              onStopStreaming={() => {}}
+              onStopStreaming={() => { /* noop */ }}
             />
           </div>
           <TransferModal

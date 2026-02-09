@@ -16,6 +16,9 @@ import {
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 
+const agentNames = ["ሳራ", "ሚካኤል", "አይሻ", "ዳዊት", "እሌኒ", "ዮሃንስ", "ፋጢማ", "ሳምራዊት", "ማርቆስ", "አሊ"];
+
+
 export default function TransferPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const chatId = parseInt(id);
@@ -61,7 +64,7 @@ export default function TransferPage({ params }: { params: Promise<{ id: string 
     }
   ];
 
-  const agentNames = ["ሳራ", "ሚካኤል", "አይሻ", "ዳዊት", "እሌኒ", "ዮሃንስ", "ፋጢማ", "ሳምራዊት", "ማርቆስ", "አሊ"];
+
 
   useEffect(() => {
     if (isConnected) return;

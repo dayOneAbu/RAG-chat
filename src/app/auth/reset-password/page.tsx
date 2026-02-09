@@ -62,11 +62,11 @@ function ResetPasswordForm() {
           password: values.password,
         }),
       });
-      const data = await response.json();
+      const data = (await response.json()) as { message?: string };
       console.log("Reset response:", data);
       if (!response.ok) {
-        setFormError(data.message || "የይለፍ ቃል መልሶ ማግኛ አልተሳካም");
-        toast.error(data.message || "የይለፍ ቃል መልሶ ማግኛ አልተሳካም");
+        setFormError(data.message ?? "የይለፍ ቃል መልሶ ማግኛ አልተሳካም");
+        toast.error(data.message ?? "የይለፍ ቃል መልሶ ማግኛ አልተሳካም");
         return;
       }
       toast.success("የይለፍ ቃል በተሳካ ሁኔታ ተቀዯሯል");

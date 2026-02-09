@@ -53,13 +53,13 @@ export function SignUpForm() {
 
       if (!response.ok) {
         const error = (await response.json()) as ApiError;
-        setFormError(error.message || "ይህ ኢሜል ቀደም ሲል ተጠቅመዋል።");
-        toast.error(error.message || "ይህ ኢሜል ቀደም ሲል ተጠቅመዋል።");
+        setFormError(error.message ?? "ይህ ኢሜል ቀደም ሲል ተጠቅመዋል።");
+        toast.error(error.message ?? "ይህ ኢሜል ቀደም ሲል ተጠቅመዋል።");
         return;
       }
 
-      const data = await response.json();
-      toast.success(data.message || "Registration successful. Please check your email to verify your account.");
+      const data = (await response.json()) as { message?: string };
+      toast.success(data.message ?? "Registration successful. Please check your email to verify your account.");
       router.push("/auth/verify-pending");
     } catch (err) {
       if (err instanceof Error) {

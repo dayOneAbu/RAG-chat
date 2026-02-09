@@ -52,7 +52,7 @@ export function SignInForm() {
       toast.success("በተሳካ ሁኔታ ገብተዋል");
       router.refresh();
       router.push("/");
-    } catch (err) {
+    } catch {
       setFormError("ወደ ሲስተሙ መግባት አልተሳካም");
       toast.error("ወደ ሲስተሙ መግባት አልተሳካም");
     } finally {

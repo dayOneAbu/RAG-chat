@@ -28,8 +28,8 @@ async function getRAGResponse(query: string): Promise<string> {
       if (done) break;
       const chunk = decoder.decode(value, { stream: true });
       try {
-        const data = JSON.parse(chunk);
-        fullText += data.answer || data.text || data.message || data.response || chunk;
+        const data = JSON.parse(chunk) as { answer?: string; text?: string; message?: string; response?: string };
+        fullText += data.answer ?? data.text ?? data.message ?? data.response ?? chunk;
       } catch {
         fullText += chunk; // Fallback for non-JSON chunks
       }
@@ -48,8 +48,8 @@ async function getRAGResponse(query: string): Promise<string> {
 // This function signals that TTS is available on-demand by returning a placeholder.
 async function getTTSAndSave({
   input,
-  voice,
-  response_format = "mp3",
+  voice: _voice,
+  response_format: _response_format = "mp3",
 }: {
   input: string;
   voice: string;
@@ -200,25 +200,25 @@ export const chatRouter = createTRPCRouter({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-    const chat = await ctx.db.chatHistory.findFirst({
-      where: {
-        id: input.id,
-        createdById: ctx.session.user.id,
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: "asc" },
+      const chat = await ctx.db.chatHistory.findFirst({
+        where: {
+          id: input.id,
+          createdById: ctx.session.user.id,
         },
-      },
-    });
-    if (!chat) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Chat not found or unauthorized",
+        include: {
+          messages: {
+            orderBy: { createdAt: "asc" },
+          },
+        },
       });
-    }
-    return chat;
-  }),
+      if (!chat) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Chat not found or unauthorized",
+        });
+      }
+      return chat;
+    }),
 
   rename: protectedProcedure
     .input(z.object({
@@ -264,5 +264,5 @@ export const chatRouter = createTRPCRouter({
       });
       return { success: true };
     }),
-  
+
 });

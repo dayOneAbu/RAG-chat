@@ -6,7 +6,7 @@ export function useTTS() {
   const ttsRef = useRef<HTMLAudioElement | null>(null);
 
   const speak = useCallback(
-    async (text: string, voice: string = "am-ET-AmehaNeural") => {
+    async (text: string, voice = "am-ET-AmehaNeural") => {
       if (!text.trim()) return;
       if (ttsRef.current) {
         ttsRef.current.pause();

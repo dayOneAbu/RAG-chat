@@ -31,7 +31,7 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.redirect(
-      new URL("/auth/signin?verified=true", process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000")
+      new URL("/auth/signin?verified=true", process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000")
     );
   } catch (error) {
     console.error("Verification error:", error);

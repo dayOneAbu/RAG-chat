@@ -1,6 +1,5 @@
 "use client";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -23,7 +22,6 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -46,10 +44,10 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email: values.email }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as { message?: string };
       if (!response.ok) {
-        setFormError(data.message || "የይለፍ ቃል መልሶ ማግኛ ጥያቄ አልተሳካም");
-        toast.error(data.message || "የይለፍ ቃል መልሶ ማግኛ ጥያቄ አልተሳካም");
+        setFormError(data.message ?? "የይለፍ ቃል መልሶ ማግኛ ጥያቄ አልተሳካም");
+        toast.error(data.message ?? "የይለፍ ቃል መልሶ ማግኛ ጥያቄ አልተሳካም");
         return;
       }
 

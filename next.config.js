@@ -11,7 +11,7 @@ const config = {
   eslint: {
     // TODO: Fix ESLint errors before final production deployment
     // Currently there are pre-existing unsafe any type errors that need attention
-    ignoreDuringBuilds: true,
+    // ignoreDuringBuilds: true,
   },
 };
 

@@ -6,7 +6,7 @@ import { Button } from "~/app/_components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "~/app/_components/ui/collapsible";
 import { api } from "~/trpc/react";
 import { Pencil, Trash2, X, Menu } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Input } from "~/app/_components/ui/input";
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "~/lib/utils";
